@@ -1,47 +1,47 @@
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
-import { CylinderGeometry, Mesh, PlaneGeometry } from "three"
+watch: {
+    //...
 
-const GLTF_LOADER = new GLTFLoader()
-GLTF_LOADER.setDRACOLoader(new DRACOLoader())
+    isParamsMenuVisible: {
+      immediate: true,
+      handler() { if (this.isParamsMenuVisible === true) document.getElementById("paramsHolder").appendChild(this.propEditor.domElement) }
+    }
 
-const BASE_MESHES_PATH = 'public/meshes/'
+    //...
+}
 
-const loadFromFS = async name =>
-  new Promise(resolve => GLTF_LOADER.load(`${BASE_MESHES_PATH}${name}.glb`, resolve))
-    .then( mesh => mesh.scene )
+handleMeshOrEnvChange() {
+    this.swapScene(this.propEditor?.save())
+    this.propEditor?.destroy()
+    this.propEditor = new GUI({ autoPlace: false })
+    this.propEditor.domElement.childNodes[0].remove()
+}
 
-const getPreviewPaths = name => ({
-  previewPath: `${BASE_MESHES_PATH}${name}_preview.png`,
-  previewPathSelected: `${BASE_MESHES_PATH}${name}_preview_selected.png`
-})
-
-const MESHES_FACTORY = [
-  {
-    name: 'Sphere',
-    builder: async () => loadFromFS('sphere'),
-    ...getPreviewPaths('sphere')
-  },
-  {
-    name: 'Shaderball',
-    builder: () => loadFromFS('shaderball'),
-    ...getPreviewPaths('shaderball')
-  },
-  {
-    name: 'Cylinder',
-    builder: () => new Mesh(new CylinderGeometry(0.4, 0.4, 1.68, 60)),
-    ...getPreviewPaths('cylinder')
-  },
-  {
-    name: 'Cloth',
-    builder: () => loadFromFS('cloth'),
-    ...getPreviewPaths('cloth')
-  },
-  {
-    name: 'Plane',
-    builder: () => new Mesh(new PlaneGeometry(5, 5)),
-    ...getPreviewPaths('plane')
+const fillPropertyEditor = (material, uniforms, propEditor, callback, state) => {
+    const PARAM_TYPE = {
+        ZERO_TO_ONE: Symbol('ZERO_TO_ONE'),
+        COLOR: Symbol('COLOR'),
+        NUMERIC: Symbol('NUMERIC')
+    }
+    const addUniformParam = (folder, paramType, uniformName, customParamName, from, to, step) => {
+      const p = uniforms[uniformName]
+      if (p) {
+        const paramName = customParamName ?? uniformName.replaceAll('_', ' ').split(' ').map(capitalize).join(' ')
+        switch (paramType) {
+          case PARAM_TYPE.ZERO_TO_ONE:
+            folder.add(p, 'value', 0, 1).step(0.0001).name(paramName).onChange( () => callback() )
+            break
+          case PARAM_TYPE.COLOR:
+            folder.addColor(new ColorGUIController(uniforms, uniformName), 'value').name(paramName).onChange( () => callback() )
+            break
+          case PARAM_TYPE.NUMERIC:
+            folder.add(uniforms[uniformName], 'value', from, to).step(step).name(paramName).onChange( () => callback() )
+            break
+        }
+      }
+    }
+    const base = propEditor.addFolder('Base')
+    addUniformParam(base, PARAM_TYPE.ZERO_TO_ONE, 'base')
+    //...
+    propEditor.add({ reset() { propEditor.reset() } }, 'reset').name('Reset')
+    if (state) propEditor.load(state)
   }
-]
-
-export { MESHES_FACTORY }

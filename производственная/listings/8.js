@@ -1,34 +1,26 @@
-methods: {
-    requestRender() {
-      if (!this.renderRequested) {
-        this.renderRequested = true
-        requestAnimationFrame(this.render)
-      }
-    },
-
-    render() {
-      this.renderRequested = false
-      this.composer.render()
-      this.model?.traverse( child => {
-        if (child.isMesh) {
-          const uniforms = child.material.uniforms
-          if (uniforms) {
-            uniforms.u_worldMatrix.value = child.matrixWorld
-            uniforms.u_viewProjectionMatrix.value = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse)
-            if (uniforms.u_viewPosition) uniforms.u_viewPosition.value = this.camera.getWorldPosition(new THREE.Vector3())
-            if (uniforms.u_worldInverseTransposeMatrix) uniforms.u_worldInverseTransposeMatrix.value =
-              new THREE.Matrix4().setFromMatrix3(new THREE.Matrix3().getNormalMatrix(child.matrixWorld))
-          }
-        }
-      })
-      this.controls.update()
-    },
-
-    renderLimitedFrames(frames = 60, afterRender = () => {}) {
-      if (frames > 0) requestAnimationFrame(() => {
-        this.render()
-        this.renderLimitedFrames(frames - 1, afterRender)
-      })
-      else afterRender()
-    }
+// function for sending data from iframe to parent
+Vue.prototype.$notifyParent = (msg = '', type = 'notification/error') => {
+    window?.parent?.postMessage(JSON.stringify({ msg, type }), process.env.VUE_APP_FRONTEND_URL)
 }
+
+// example of usage
+const mtlxMaterial = await this.catchingLoadMaterial()
+if (!Converter.isMtlx(mtlxMaterial)) {
+  this.$notifyParent(new Error(`Material '${this.materialPath}' not found on server`))
+  new FallbackMaterial(core, doc)
+} else if (Converter.getMaterialVersion(mtlxMaterial) < 1.38) {
+  this.$notifyParent(new Error('3D mode supports only materials version 1.38 or above'))
+  new FallbackMaterial(core, doc)
+} else await core.readFromXmlString(doc, mtlxMaterial)
+
+// handling in parent
+window.addEventListener(
+    'message', 
+    e => {
+        if (event.origin === process.env.VUE_APP_URL_VIEWER) {
+            const data = JSON.parse(event.data);
+            this.$store.dispatch(data.type, data.msg)
+        }
+    }, 
+    false
+)

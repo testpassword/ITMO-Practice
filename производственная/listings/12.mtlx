@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<materialx version="1.38" xmlns:xi="http://www.w3.org/2001/XInclude" fileprefix="public/materials/demo/textures/">
+  <xi:include href="stdlib/stdlib_defs.mtlx" />
+  <!-- ... -->
+  <nodegraph name="NDMaterialX_Graph" node="MaterialX_Graph">
+    <output name="base_color_output" type="color3" />
+    <output name="metalness_output" type="float" />
+    <output name="specular_roughness_output" type="float" />
+    <output name="coat_normal_output" type="vector3" />
+    <output name="normal_output" type="vector3" />
+    <output name="tangent_output" type="vector3" />
+    <input name="UVScale_2" type="vector2" value=" 1.000000, 1.000000" uisoftmin="0.0,0.0" uisoftmax="1.0,1.0" uimin="0.0,0.0" uimax="1.0,1.0" uniform="true" />
+    <input name="RoughnessHigh" type="float" value="1.0" uisoftmin="0.0" uisoftmax="1.0" uimin="0.0" uimax="1.0" uniform="true" />
+    <input name="RoughnessLow" type="float" value="0.07000000029802322" uisoftmin="0.0" uisoftmax="1.0" uimin="0.0" uimax="1.0" uniform="true" />
+  </nodedef>
+  <standard_surface name="MaterialX_Graph2" type="surfaceshader">
+    <input name="base" type="float" value="0.800000011920929" />
+    <!-- ... -->
+  </standard_surface>
+    <!-- ... -->
+</materialx>
